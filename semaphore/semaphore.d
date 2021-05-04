@@ -1,4 +1,3 @@
-
 import std.algorithm, std.concurrency, std.format, std.range, std.stdio, std.traits;
 import core.thread, core.sync.semaphore, core.sync.mutex, core.sync.condition;
 
@@ -7,7 +6,6 @@ immutable Duration tick = 16.msecs;
 // --- RESOURCE CLASS --- //
 /* 
 You will implement the functionality for `allocate` and `deallocate`.
-
 Documentation:
 Semaphore:
     https://dlang.org/phobos/core_sync_semaphore.html
@@ -32,12 +30,38 @@ class Resource(T) {
         }
     }
     
+    //start by implementing buggy solution
     T allocate(int id, int priority){
+        mtx.wait(); 
+        if(busy){
+            ++ numWaiting[priority]; //Only if it is busy will we have to wait. Adds before notifying mutex, so we can wait in queue. 
+            mtx.notify(); 
+            sems[priority].wait(); //If this was before the mutex we would block the mutex. 
+                  
+        }
+        busy = true; 
+        mtx.notify(); 
         return value;
     }
     
     void deallocate(T v){
         value = v;
+        mtx.wait();
+        
+        busy = false;
+        if(numWaiting[1]>0){ //want highest priority first
+            sems[1].notify();  
+            --numWaiting[1]; //one less in queue
+        }else if(numWaiting[0] > 0){ 
+             sems[0].notify();  
+             --numWaiting[0];
+           
+        }
+        else{
+            mtx.notify();  
+           
+             
+        }    
     }
 }
 

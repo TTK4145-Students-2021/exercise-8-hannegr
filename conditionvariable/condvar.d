@@ -31,20 +31,34 @@ class Resource(T) {
         T                   value;
         Mutex               mtx;
         Condition           cond;
-        PriorityQueue!int   queue;
+        PriorityQueue!int   queue; //think this is an array, use 
     }
     
     this(){
         mtx     = new Mutex();
         cond    = new Condition(mtx);
     }
+
+    //sometimes all tests pass, sometimes they don't. 
     
     T allocate(int id, int priority){
+        mtx.lock(); //lock
+        queue.insert(id, priority); //insert priority and id into queue
+        while(queue.front() != id){//while not our turn(we are not first in line)
+            cond.wait(); //wait 
+        }
+        mtx.unlock();//unlock
         return value;
     }
     
-    void deallocate(T v){
+    void deallocate(T v){  
         value = v;
+        mtx.lock(); //lock
+        
+        queue.popFront(); //pop the first element in queue, make one available
+        cond.notify(); //make one available
+        cond.notifyAll(); //notify all
+        mtx.unlock();//unlock  
     }
 }
 

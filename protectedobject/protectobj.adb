@@ -1,4 +1,3 @@
-
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Containers; use Ada.Containers;
 with Ada.Containers.Vectors;
@@ -21,7 +20,7 @@ procedure protectobj is
     --  - Equality checks are done with `=`, instead of `==`. Assignment is always done with `:=`.
     -----------------------
     protected type Resource is
-        entry allocateHigh(val: out IntVec.Vector);
+        entry allocateHigh(val: out IntVec.Vector); 
         entry allocateLow(val: out IntVec.Vector);
         procedure deallocate(val: IntVec.Vector);
     private
@@ -30,23 +29,45 @@ procedure protectobj is
     end Resource;
     protected body Resource is
     
-        entry allocateLow(val: out IntVec.Vector) when True is
+        entry allocateLow(val: out IntVec.Vector) when busy = False and (allocateHigh'Count > 0  or allocateLow'Count > 0)  is
+        -- when Is_Set is
+         --  Entry is blocked until the condition is true.
+         --  The barrier is evaluated at call of entries and at exits of
+         --  procedures and entries.
+         --  The calling task sleeps until the barrier is released
+
+         -- so what I want to do is block this allocateLow until the 1-priority 
+         -- tasks are done. Therefore I add that busy is False to avoid race 
+         -- conditions, but also that allocateHigh must have ran or that 
+         -- an allocateLow must already have ran (so that processes with)
+         -- 0-priority can run when there are only processes with 0-priority. 
         begin
-            --Put_Line("allocateLow");
-            val := value;
+        
+            -- Put_Line("allocateLow");
+            busy := True;
+            val := value; 
+            
+            
         end allocateLow;
     
-        entry allocateHigh(val: out IntVec.Vector) when True is
+        entry allocateHigh(val: out IntVec.Vector) when busy = False is
         begin
-            --Put_Line("allocateHigh");
+            -- Put_Line("allocateHigh");
+            busy := True;
             val := value;
+            
+            
         end allocateHigh;
 
         procedure deallocate(val: IntVec.Vector) is
         begin
-            --Put_Line("deallocate");
+            -- Put_Line("deallocate");
+            --if allocateHigh'Count > 0 and allocateLow'Count >= 0 then
             value := val;
+            busy := False; 
+            --end if; 
         end deallocate;
+        
 
     end Resource;
 
