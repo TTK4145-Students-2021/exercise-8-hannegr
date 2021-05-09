@@ -18,11 +18,11 @@
       - It says that the conditional variables were maybe not so bad after all?
   
  - In D's standard library, `getValue` for semaphores is not even exposed (probably because it is not portable - Windows semaphores don't have `getValue`, though you could hack it together with `ReleaseSemaphore()` and `WaitForSingleObject()`).
-   - A leading question: Is using `getValue` *ever* appropriate?
-      - No, because this will allow someone to read a value that may change in an instant both with wait and signal. The wait and   signal executable are also meant to be atomic (does this matter?). Meant to be extremely fast - would waste CPU to check? Idk
-   - Explain your intuition: What is it that makes `getValue` so dubious?
+   - A leading question: Is using `getValue` *ever* appropriate? Explain your intuition: What is it that makes `getValue` so dubious?
+      - No, because this will allow someone to read a value that may change in an instant both with wait and signal. The wait and   signal executable are also meant to be atomic (does this matter? Don't think so). Semaphores are in general meant to be extremely fast, so checking them would waste time?
  
  - Which one(s) of these different mechanisms do you prefer, both for this specific task, and in general? (This is a matter of taste - there are no "right" answers here)
+    - I prefer Ada's method with protected object, because it is the most intuitive to me. It also seems safer, because you do not need to implement as much logic as with for instance conditional variables and semaphores. 
 
 
 
