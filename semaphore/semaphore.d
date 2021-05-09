@@ -1,7 +1,7 @@
 import std.algorithm, std.concurrency, std.format, std.range, std.stdio, std.traits;
 import core.thread, core.sync.semaphore, core.sync.mutex, core.sync.condition;
 
-immutable Duration tick = 16.msecs;
+immutable Duration tick = 33.msecs;
 
 // --- RESOURCE CLASS --- //
 /* 
@@ -45,8 +45,9 @@ class Resource(T) {
     }
     
     void deallocate(T v){
-        value = v;
+        
         mtx.wait();
+	value = v; //value after mutex waits to avoid writing over someone
         
         busy = false;
         if(numWaiting[1]>0){ //want highest priority first
